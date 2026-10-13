@@ -6,12 +6,39 @@
         <Nullable>enable</Nullable>
         <AssemblyName>noheroexpmultiplier</AssemblyName>
         <LangVersion>latest</LangVersion>
-        <Optimize>False</Optimize>
         <DebugType>embedded</DebugType>
+        <PlatformTarget>x64</PlatformTarget>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <BloonsTD6 Condition="'$(BloonsTD6)' == ''">$(ProgramW6432)\Epic Games\BloonsTD6</BloonsTD6>
     </PropertyGroup>
+
+    <Import Project="Local.props" Condition="Exists('Local.props')" />
+
+    <PropertyGroup>
+        <DeployMod Condition="'$(DeployMod)' == '' and '$(Configuration)' == 'Debug' and Exists('$(BloonsTD6)/BloonsTD6.exe')">true</DeployMod>
+        <DeployMod Condition="'$(DeployMod)' == ''">false</DeployMod>
+    </PropertyGroup>
+
     <ItemGroup>
-        <Content Include=".github\workflows\build.yml" />
+        <Reference Include="$(BloonsTD6)/MelonLoader/net6/MelonLoader.dll" Private="false" />
+        <Reference Include="$(BloonsTD6)/MelonLoader/net6/0Harmony.dll" Private="false" />
+        <Reference Include="$(BloonsTD6)/MelonLoader/net6/Il2CppInterop.Runtime.dll" Private="false" />
+        <Reference Include="$(BloonsTD6)/MelonLoader/Il2CppAssemblies/Assembly-CSharp.dll" Private="false" />
+        <Reference Include="$(BloonsTD6)/MelonLoader/Il2CppAssemblies/Il2Cppmscorlib.dll" Private="false" />
+        <Reference Include="$(BloonsTD6)/MelonLoader/Il2CppAssemblies/Il2CppNinjaKiwi.Common.dll" Private="false" />
+        <Reference Include="$(BloonsTD6)/MelonLoader/Il2CppAssemblies/UnityEngine.CoreModule.dll" Private="false" />
+        <Reference Include="$(BloonsTD6)/Mods/Btd6ModHelper.dll" Private="false" />
+        <EmbeddedResource Include="Icon.png" />
     </ItemGroup>
 
-    <Import Project="..\btd6.targets" />
+    <Target Name="CheckGameReferences" BeforeTargets="ResolveAssemblyReferences">
+        <Error Condition="!Exists('$(BloonsTD6)/MelonLoader/Il2CppAssemblies/Assembly-CSharp.dll')"
+               Text="BTD6 references were not found. Set BloonsTD6 in Local.props to your game folder, install MelonLoader, and launch the game once." />
+        <Error Condition="!Exists('$(BloonsTD6)/Mods/Btd6ModHelper.dll')"
+               Text="Install Btd6ModHelper.dll in the game's Mods folder before building." />
+    </Target>
+
+    <Target Name="DeployModToGame" AfterTargets="Build" Condition="'$(DeployMod)' == 'true'">
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BloonsTD6)/Mods" />
+    </Target>
 </Project>
